@@ -12,6 +12,7 @@ return new class extends Migration {
             $table->string('name');        // Display name e.g., "BHK"
             $table->string('slug')->unique(); // e.g., "bhk"
             $table->string('unit_label')->nullable(); // e.g., "Hour"
+            $table->string('example')->nullable(); // Add this line
             $table->timestamps();
         });
     }

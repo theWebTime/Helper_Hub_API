@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             SubServiceTypeNameSeeder::class,
             AdminSeeder::class,
             ServiceSeeder::class,
+            SiteSettingsSeeder::class,
         ]);
     }
 }
