@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthenticationController;
 use App\Http\Controllers\Api\PrivacyPolicyController;
 use App\Http\Controllers\Api\FaqController;
+use App\Http\Controllers\Api\TermsConditionController;
  
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -42,6 +43,15 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
         Route::post('/update/{id}', [FaqController::class, 'update']);
         Route::post('/delete/{id}', [FaqController::class, 'delete']);
     });
+
+    // Terms & Conditions Routes
+    Route::group(['prefix' => '/terms-condition'], function () {
+        Route::get('/index', [TermsConditionController::class, 'index']);
+        Route::post('/store', [TermsConditionController::class, 'store']);
+        Route::get('/show/{id}', [TermsConditionController::class, 'show']);
+        Route::post('/update/{id}', [TermsConditionController::class, 'update']);
+        Route::post('/delete/{id}', [TermsConditionController::class, 'delete']);
+    });
 });
 
 Route::middleware(['auth:api', 'role:user'])->group(function () {
@@ -52,5 +62,8 @@ Route::middleware(['auth:api', 'role:user'])->group(function () {
 
     // FAQ Show API
     Route::get('/faq-index', [FaqController::class, 'index']);
+
+    // Terms & Conditions Show API
+    Route::get('/terms-condition-index', [TermsConditionController::class, 'index']);
 });
 
