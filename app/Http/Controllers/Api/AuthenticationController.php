@@ -126,13 +126,18 @@ class AuthenticationController extends BaseController
     /**
      * Logout API
      */
-    public function logout(Request $request): JsonResponse
+    public function logout()
     {
         try {
-            $request->user()->token()->revoke();
-            return $this->sendResponse([], 'User logged out successfully.');
-        } catch (\Exception $e) {
-            return $this->sendError('Logout failed.', ['error' => $e->getMessage()]);
+            if (Auth::user()) {
+                $user = Auth::user()->token();
+                $user->revoke();
+                return $this->sendResponse([], 'User logout successfully.');
+            } else {
+                return $this->sendError('Unauthorized.', ['error' => 'Unauthorized']);
+            }
+        } catch (Exception $e) {
+            return $this->sendError('something went wrong!', $e);
         }
     }
 
