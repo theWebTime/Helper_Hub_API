@@ -14,7 +14,7 @@ class PrivacyPolicyController extends BaseController
     public function index(Request $request)
     {
         try {
-            $data = PrivacyPolicy::select('id', 'title')->where(function ($query) use ($request) {
+            $data = PrivacyPolicy::select('id', 'title', 'description')->where(function ($query) use ($request) {
                 if ($request->search != null) {
                     $query->where('title', 'like', '%' . $request->search . '%');
                 }
