@@ -56,4 +56,19 @@ class AuthenticationController extends BaseController
             return $this->sendError('Unauthorised.', ['error'=>'Unauthorised']);
         } 
     }
+
+    public function logout()
+    {
+        try {
+            if (Auth::user()) {
+                $user = Auth::user()->token();
+                $user->revoke();
+                return $this->sendResponse([], 'User logout successfully.');
+            } else {
+                return $this->sendError('Unauthorized.', ['error' => 'Unauthorized']);
+            }
+        } catch (Exception $e) {
+            return $this->sendError('something went wrong!', $e);
+        }
+    }
 }
