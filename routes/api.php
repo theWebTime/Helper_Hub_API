@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthenticationController;
 use App\Http\Controllers\Api\PrivacyPolicyController;
+use App\Http\Controllers\Api\FaqController;
  
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -32,6 +33,15 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
         Route::post('/update/{id}', [PrivacyPolicyController::class, 'update']);
         Route::post('/delete/{id}', [PrivacyPolicyController::class, 'delete']);
     });
+
+    // FAQ Routes
+    Route::group(['prefix' => '/faq'], function () {
+        Route::get('/index', [FaqController::class, 'index']);
+        Route::post('/store', [FaqController::class, 'store']);
+        Route::get('/show/{id}', [FaqController::class, 'show']);
+        Route::post('/update/{id}', [FaqController::class, 'update']);
+        Route::post('/delete/{id}', [FaqController::class, 'delete']);
+    });
 });
 
 Route::middleware(['auth:api', 'role:user'])->group(function () {
@@ -39,5 +49,8 @@ Route::middleware(['auth:api', 'role:user'])->group(function () {
 
     // Privacy Policy Show API
     Route::get('/privacy-policy-index', [PrivacyPolicyController::class, 'index']);
+
+    // FAQ Show API
+    Route::get('/faq-index', [FaqController::class, 'index']);
 });
 
