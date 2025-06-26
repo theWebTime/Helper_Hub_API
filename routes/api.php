@@ -6,13 +6,17 @@ use App\Http\Controllers\Api\AuthenticationController;
 use App\Http\Controllers\Api\PrivacyPolicyController;
 use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\TermsConditionController;
+use App\Http\Controllers\API\UserAddressController;
+
  
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:api');
  
 // Public routes (no authentication required)
-Route::post('register', [AuthenticationController::class, 'register'])->name('register');
+// Route::post('register', [AuthenticationController::class, 'register'])->name('register');
+Route::post('/register/send-otp', [AuthenticationController::class, 'sendOtpForRegistration']);
+Route::post('/register/verify-otp', [AuthenticationController::class, 'verifyOtpAndRegister']);
 Route::post('login', [AuthenticationController::class, 'login'])->name('login');
 
 // Protected routes (authentication required)
@@ -65,5 +69,14 @@ Route::middleware(['auth:api', 'role:user'])->group(function () {
 
     // Terms & Conditions Show API
     Route::get('/terms-condition-index', [TermsConditionController::class, 'index']);
+
+    Route::group(['prefix' => '/user-address'], function () {
+        Route::get('/index', [UserAddressController::class, 'index']);
+        Route::post('/store', [UserAddressController::class, 'store']);
+        Route::get('/show/{id}', [UserAddressController::class, 'show']);
+        Route::post('/update/{id}', [UserAddressController::class, 'update']);
+        Route::post('/delete/{id}', [UserAddressController::class, 'delete']);
+    });
+    
 });
 
