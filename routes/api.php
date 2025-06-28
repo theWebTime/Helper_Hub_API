@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\TermsConditionController;
 use App\Http\Controllers\API\UserAddressController;
 use App\Http\Controllers\API\UserController;
+use App\Http\Controllers\API\ServiceController;
 
  
 Route::get('/user', function (Request $request) {
@@ -31,12 +32,18 @@ Route::middleware('auth:api')->group(function () {
 Route::middleware(['auth:api', 'role:admin'])->group(function () {
     Route::post('/check-admin', [AuthenticationController::class, 'admin']);
 
-    //LIST ROUTES
-    // Registered User List
+    // Registered User Route
     Route::group(['prefix' => '/user'], function () {
         Route::get('/index', [UserController::class, 'index']);
         Route::get('/show/{id}', [UserController::class, 'show']);
         Route::post('/update/{id}', [UserController::class, 'update']);
+    });
+
+    // Service Route
+    Route::group(['prefix' => '/service'], function () {
+        Route::get('/index', [ServiceController::class, 'index']);
+        Route::get('/show/{id}', [ServiceController::class, 'show']);
+        Route::post('/update/{id}', [ServiceController::class, 'update']);
     });
 
     // Privacy Policy Routes
