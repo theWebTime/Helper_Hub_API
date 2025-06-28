@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\PrivacyPolicyController;
 use App\Http\Controllers\Api\FaqController;
 use App\Http\Controllers\Api\TermsConditionController;
 use App\Http\Controllers\API\UserAddressController;
+use App\Http\Controllers\API\UserController;
 
  
 Route::get('/user', function (Request $request) {
@@ -29,6 +30,14 @@ Route::middleware('auth:api')->group(function () {
 
 Route::middleware(['auth:api', 'role:admin'])->group(function () {
     Route::post('/check-admin', [AuthenticationController::class, 'admin']);
+
+    //LIST ROUTES
+    // Registered User List
+    Route::group(['prefix' => '/user'], function () {
+        Route::get('/index', [UserController::class, 'index']);
+        Route::get('/show/{id}', [UserController::class, 'show']);
+        Route::post('/update/{id}', [UserController::class, 'update']);
+    });
 
     // Privacy Policy Routes
     Route::group(['prefix' => '/privacy-policy'], function () {
