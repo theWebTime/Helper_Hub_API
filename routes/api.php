@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\TermsConditionController;
 use App\Http\Controllers\API\UserAddressController;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\ServiceController;
+use App\Http\Controllers\API\PincodeController;
 
  
 Route::get('/user', function (Request $request) {
@@ -44,6 +45,15 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
         Route::get('/index', [ServiceController::class, 'index']);
         Route::get('/show/{id}', [ServiceController::class, 'show']);
         Route::post('/update/{id}', [ServiceController::class, 'update']);
+    });
+
+    // Pincode Routes
+    Route::group(['prefix' => '/pincode'], function () {
+        Route::get('/index', [PincodeController::class, 'index']);
+        Route::post('/store', [PincodeController::class, 'store']);
+        Route::get('/show/{id}', [PincodeController::class, 'show']);
+        Route::post('/update/{id}', [PincodeController::class, 'update']);
+        Route::post('/delete/{id}', [PincodeController::class, 'delete']);
     });
 
     // Privacy Policy Routes

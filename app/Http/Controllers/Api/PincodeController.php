@@ -4,22 +4,21 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Faq;
+use App\Models\PinCode;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\API\BaseController as BaseController;
 
-class FaqController extends BaseController
+class PincodeController extends BaseController
 {
     public function index(Request $request)
     {
         try {
-            $data = Faq::select('id', 'question', 'answer')->where(function ($query) use ($request) {
+            $data = PinCode::select('id', 'pin_code', 'status')->where(function ($query) use ($request) {
                 if ($request->search != null) {
-                    $query->where('question', 'like', '%' . $request->search . '%');
+                    $query->where('pin_code', 'like', '%' . $request->search . '%');
                 }
             })->orderBy('id', 'DESC')->paginate($request->itemsPerPage ?? 10);
-            return $this->sendResponse($data, 'FAQ retrieved successfully.');
+            return $this->sendResponse($data, 'Pincode retrieved successfully.');
         } catch (Exception $e) {
             return $this->sendError('something went wrong!', $e);
         }
@@ -31,15 +30,14 @@ class FaqController extends BaseController
         try {
             $input = $request->all();
             $validator = Validator::make($input, [
-                'question' => 'required',
-                'answer' => 'required',
+                'pin_code' => 'required',
             ]);
             if ($validator->fails()) {
                 return $this->sendError('Validation Error.', $validator->errors());
             }
-            $updateData = (['question' => $input['question'], 'answer' => $input['answer']]);
-            Faq::create($updateData);
-            return $this->sendResponse([], 'FAQ created successfully.');
+            $updateData = (['pin_code' => $input['pin_code']]);
+            PinCode::create($updateData);
+            return $this->sendResponse([], 'Pincode created successfully.');
         } catch (Exception $e) {
             return $this->sendError('something went wrong!', $e);
         }
@@ -49,8 +47,8 @@ class FaqController extends BaseController
     {
         //Using Try & Catch For Error Handling
         try {
-            $data = Faq::where('id', $id)->select('id', 'question', 'answer')->first();
-            return $this->sendResponse($data, 'FAQ retrieved successfully.');
+            $data = PinCode::where('id', $id)->select('id', 'pin_code', 'status')->first();
+            return $this->sendResponse($data, 'Pincode retrieved successfully.');
         } catch (Exception $e) {
             return $this->sendError('something went wrong!', $e);
         }
@@ -62,15 +60,15 @@ class FaqController extends BaseController
         try {
             $input = $request->all();
             $validator = Validator::make($input, [
-                'question' => 'required',
-                'answer' => 'required',
+                'pin_code' => 'required',
+                'status' => 'required|in:0,1',
             ]);
             if ($validator->fails()) {
                 return $this->sendError('Validation Error.', $validator->errors());
             }
-            $updateData = (['question' => $input['question'], 'answer' => $input['answer']]);
-            Faq::where('id', $id)->update($updateData);
-            return $this->sendResponse([], 'FAQ updated successfully.');
+            $updateData = (['pin_code' => $input['pin_code'], 'status' => $input['status']]);
+            PinCode::where('id', $id)->update($updateData);
+            return $this->sendResponse([], 'Pincode updated successfully.');
         } catch (Exception $e) {
             return $e;
             return $this->sendError('something went wrong!', $e);
@@ -81,8 +79,8 @@ class FaqController extends BaseController
     {
         //Using Try & Catch For Error Handling
         try {
-            DB::table('faqs')->where('id', $id)->delete();
-            return $this->sendResponse([], 'FAQ deleted successfully.');
+            DB::table('pin_codes')->where('id', $id)->delete();
+            return $this->sendResponse([], 'Pincode deleted successfully.');
         } catch (Exception $e) {
             return $this->sendError('something went wrong!', $e);
         }
