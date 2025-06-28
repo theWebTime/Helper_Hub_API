@@ -56,6 +56,9 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
         Route::post('/delete/{id}', [PincodeController::class, 'delete']);
     });
 
+    // User Address List Route
+        Route::get('/user-address-list', [UserAddressController::class, 'userAddressList']);
+
     // Privacy Policy Routes
     Route::group(['prefix' => '/privacy-policy'], function () {
         Route::get('/index', [PrivacyPolicyController::class, 'index']);

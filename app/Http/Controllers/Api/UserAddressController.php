@@ -140,4 +140,19 @@ class UserAddressController extends BaseController
             return $this->sendError('Something went wrong!', $e->getMessage());
         }
     }
+
+    public function userAddressList(Request $request)
+    {
+        try {
+            $data = UserAddress::join('users', 'users.id', '=', 'user_addresses.user_id')->join('pin_codes', 'pin_codes.id', '=', 'user_addresses.pin_code_id')->select('user_addresses.id', 'users.name as user_name', 'pin_codes.pin_code', 'user_addresses.type', 'user_addresses.title', 'user_addresses.name as pickup_person_name', 'user_addresses.phone', 'user_addresses.address', 'user_addresses.landmark', 'user_addresses.is_default')->where(function ($query) use ($request) {
+                if ($request->search != null) {
+                    $query->where('user_name', 'like', '%' . $request->search . '%');
+                }
+            })->orderBy('id', 'DESC')->paginate($request->itemsPerPage ?? 10);
+
+            return $this->sendResponse($data, 'User Addresses retrieved successfully.');
+        } catch (\Exception $e) {
+            return $this->sendError('Something went wrong!', $e->getMessage());
+        }
+    }
 }
