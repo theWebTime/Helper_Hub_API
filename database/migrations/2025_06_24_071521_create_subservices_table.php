@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('subservices', function (Blueprint $table) {
             $table->id();
             $table->foreignId('service_id')->constrained()->onDelete('cascade');
-            $table->string('type_slugs')->nullable(); // e.g., "bhk,hour,person"
+            $table->string('type_slugs'); // e.g., "bhk,hour,person"
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('image')->nullable();

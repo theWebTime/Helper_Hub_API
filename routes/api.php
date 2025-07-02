@@ -13,6 +13,7 @@ use App\Http\Controllers\API\PincodeController;
 use App\Http\Controllers\API\SiteSettingController;
 use App\Http\Controllers\API\SubServiceTypeNameController;
 use App\Http\Controllers\API\SubServiceTypeDetailController;
+use App\Http\Controllers\API\SubServiceController;
 
  
 Route::get('/user', function (Request $request) {
@@ -51,6 +52,17 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
         Route::get('/index', [ServiceController::class, 'index']);
         Route::get('/show/{id}', [ServiceController::class, 'show']);
         Route::post('/update/{id}', [ServiceController::class, 'update']);
+    });
+
+    // Sub Service  Routes
+    Route::group(['prefix' => '/sub-service'], function () {
+        Route::get('/service-name-list', [SubServiceController::class, 'serviceList']);
+        Route::get('/sub-service-type-name-list', [SubServiceTypeDetailController::class, 'listIndex']);
+        Route::get('/index', [SubServiceController::class, 'index']);
+        Route::post('/store', [SubServiceController::class, 'store']);
+        Route::get('/show/{id}', [SubServiceController::class, 'show']);
+        Route::post('/update/{id}', [SubServiceController::class, 'update']);
+        Route::post('/delete/{id}', [SubServiceController::class, 'delete']);
     });
 
     // Pincode Routes
