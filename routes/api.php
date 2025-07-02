@@ -10,6 +10,7 @@ use App\Http\Controllers\API\UserAddressController;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\ServiceController;
 use App\Http\Controllers\API\PincodeController;
+use App\Http\Controllers\API\SiteSettingController;
 
  
 Route::get('/user', function (Request $request) {
@@ -21,6 +22,9 @@ Route::get('/user', function (Request $request) {
 Route::post('/register/send-otp', [AuthenticationController::class, 'sendOtpForRegistration']);
 Route::post('/register/verify-otp', [AuthenticationController::class, 'verifyOtpAndRegister']);
 Route::post('login', [AuthenticationController::class, 'login'])->name('login');
+
+//Site Setting Route
+Route::get('/site-setting-show', [SiteSettingController::class, 'show']);
 
 // Protected routes (authentication required)
 Route::middleware('auth:api')->group(function () {
@@ -84,6 +88,11 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
         Route::get('/show/{id}', [TermsConditionController::class, 'show']);
         Route::post('/update/{id}', [TermsConditionController::class, 'update']);
         Route::post('/delete/{id}', [TermsConditionController::class, 'delete']);
+    });
+
+    // Site Setting Routes
+    Route::group(['prefix' => '/site-setting'], function () {
+        Route::post('/store', [SiteSettingController::class, 'updateOrCreate']);
     });
 });
 
