@@ -11,6 +11,7 @@ use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\ServiceController;
 use App\Http\Controllers\API\PincodeController;
 use App\Http\Controllers\API\SiteSettingController;
+use App\Http\Controllers\API\SubServiceTypeNameController;
 
  
 Route::get('/user', function (Request $request) {
@@ -94,6 +95,9 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
     Route::group(['prefix' => '/site-setting'], function () {
         Route::post('/store', [SiteSettingController::class, 'updateOrCreate']);
     });
+
+    // Sub Service Type Name List Route
+        Route::get('/sub-service-type-name-list', [SubServiceTypeNameController::class, 'list']);
 });
 
 Route::middleware(['auth:api', 'role:user'])->group(function () {
