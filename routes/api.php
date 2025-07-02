@@ -12,6 +12,7 @@ use App\Http\Controllers\API\ServiceController;
 use App\Http\Controllers\API\PincodeController;
 use App\Http\Controllers\API\SiteSettingController;
 use App\Http\Controllers\API\SubServiceTypeNameController;
+use App\Http\Controllers\API\SubServiceTypeDetailController;
 
  
 Route::get('/user', function (Request $request) {
@@ -97,7 +98,17 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
     });
 
     // Sub Service Type Name List Route
-        Route::get('/sub-service-type-name-list', [SubServiceTypeNameController::class, 'list']);
+    Route::get('/sub-service-type-name-list', [SubServiceTypeNameController::class, 'list']);
+
+    // Sub Service Type Detail Routes
+    Route::group(['prefix' => '/sub-service-type-detail'], function () {
+        Route::get('/sub-service-type-name-list', [SubServiceTypeDetailController::class, 'listIndex']);
+        Route::get('/index', [SubServiceTypeDetailController::class, 'index']);
+        Route::post('/store', [SubServiceTypeDetailController::class, 'store']);
+        Route::get('/show/{id}', [SubServiceTypeDetailController::class, 'show']);
+        Route::post('/update/{id}', [SubServiceTypeDetailController::class, 'update']);
+        Route::post('/delete/{id}', [SubServiceTypeDetailController::class, 'delete']);
+    });
 });
 
 Route::middleware(['auth:api', 'role:user'])->group(function () {
@@ -112,6 +123,7 @@ Route::middleware(['auth:api', 'role:user'])->group(function () {
     // Terms & Conditions Show API
     Route::get('/terms-condition-index', [TermsConditionController::class, 'index']);
 
+    // User Address Route API
     Route::group(['prefix' => '/user-address'], function () {
         Route::get('/index', [UserAddressController::class, 'index']);
         Route::post('/store', [UserAddressController::class, 'store']);
@@ -119,6 +131,12 @@ Route::middleware(['auth:api', 'role:user'])->group(function () {
         Route::post('/update/{id}', [UserAddressController::class, 'update']);
         Route::post('/delete/{id}', [UserAddressController::class, 'delete']);
     });
+
+    // Sub Service Type Name List Route API
+    Route::get('/sub-service-type-name-list', [SubServiceTypeNameController::class, 'list']);
+
+    // Sub Service Type Detail List Route API
+    Route::get('/sub-service-type-detail-list', [SubServiceTypeDetailController::class, 'index']);
     
 });
 
