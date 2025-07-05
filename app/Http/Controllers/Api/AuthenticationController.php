@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\JsonResponse;
 use Laravel\Passport\Token;
+use Illuminate\Validation\Rule;
+
+
 
 class AuthenticationController extends BaseController
 {
@@ -51,11 +54,22 @@ class AuthenticationController extends BaseController
     {
         try {
             $validator = Validator::make($request->all(), [
-                'mobile' => 'required|string|unique:users,mobile',
+                'mobile' => [
+                    'required',
+                    'digits:10',
+                    'regex:/^[6-9][0-9]{9}$/',
+                    Rule::unique('users', 'mobile'),
+                ],
+            ], [
+                'mobile.required' => 'Mobile number is required.',
+                'mobile.digits' => 'Mobile number must be exactly 10 digits.',
+                'mobile.regex' => 'Mobile number must start with 6, 7, 8, or 9.',
+                'mobile.unique' => 'This mobile number is already registered.',
             ]);
 
             if ($validator->fails()) {
-                return $this->sendError('Validation Error.', $validator->errors());
+                // Return only the first error message as a string
+                return $this->sendError($validator->errors()->first());
             }
 
             // Static OTP for now
@@ -95,10 +109,23 @@ class AuthenticationController extends BaseController
                 'password' => 'required|string|min:6',
                 'c_password' => 'required|same:password',
                 'otp' => 'required|string'
+            ], [
+                'name.required' => 'Name is required.',
+                'email.required' => 'Email is required.',
+                'email.email' => 'Invalid email format.',
+                'email.unique' => 'This email is already registered.',
+                'mobile.required' => 'Mobile number is required.',
+                'mobile.exists' => 'Mobile number not found for OTP verification.',
+                'password.required' => 'Password is required.',
+                'password.min' => 'Password must be at least 6 characters.',
+                'c_password.required' => 'Confirm Password is required.',
+                'c_password.same' => 'Confirm Password must match Password.',
+                'otp.required' => 'OTP is required.',
             ]);
 
             if ($validator->fails()) {
-                return $this->sendError('Validation Error.', $validator->errors());
+                // Return only the first error message as a string
+                return $this->sendError($validator->errors()->first());
             }
 
             $otpRecord = OtpVerification::where([
@@ -133,6 +160,122 @@ class AuthenticationController extends BaseController
             ], 'User registered successfully.');
         } catch (\Exception $e) {
             return $this->sendError('Registration failed.', ['error' => $e->getMessage()]);
+        }
+    }
+
+    // 1. Send OTP for User Login
+    public function sendOtpForLogin(Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'mobile' => [
+                    'required',
+                    'digits:10',
+                    'regex:/^[6-9][0-9]{9}$/',
+                    'exists:users,mobile',
+                ],
+            ], [
+                'mobile.required' => 'Mobile number is required.',
+                'mobile.digits' => 'Mobile number must be exactly 10 digits.',
+                'mobile.regex' => 'Mobile number must start with 6, 7, 8, or 9.',
+                'mobile.exists' => 'This mobile number is not registered.',
+            ]);
+
+            if ($validator->fails()) {
+                // Return only the first error message as a string
+                return $this->sendError($validator->errors()->first());
+            }
+
+            $user = User::where('mobile', $request->mobile)
+                ->where('status', 1)
+                ->where('is_admin', 0)
+                ->first();
+
+            if (!$user) {
+                return $this->sendError('User not found or inactive.');
+            }
+
+            // Static OTP for now
+            $otp = '1234';
+            $expiresAt = now()->addMinute(2);
+
+            OtpVerification::updateOrCreate(
+                [
+                    'mobile' => $request->mobile,
+                    'type' => 'login',
+                ],
+                [
+                    'otp' => $otp,
+                    'is_verified' => false,
+                    'expires_at' => $expiresAt,
+                ]
+            );
+
+            return $this->sendResponse(
+                [],
+                'OTP sent successfully (1234 code as static). It will expire in 2 minutes.'
+            );
+        } catch (\Exception $e) {
+            return $this->sendError('OTP send failed.', ['error' => $e->getMessage()]);
+        }
+    }
+
+    // 2. Verify OTP and Login User
+    public function verifyOtpAndLogin(Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'mobile' => [
+                    'required',
+                    'digits:10',
+                    'regex:/^[6-9][0-9]{9}$/',
+                    'exists:users,mobile',
+                ],
+                'otp' => 'required|string',
+            ], [
+                'mobile.required' => 'Mobile number is required.',
+                'mobile.digits' => 'Mobile number must be exactly 10 digits.',
+                'mobile.regex' => 'Mobile number must start with 6, 7, 8, or 9.',
+                'mobile.exists' => 'This mobile number is not registered.',
+                'otp.required' => 'OTP is required.',
+            ]);
+
+            if ($validator->fails()) {
+                // Return only the first error message as a string
+                return $this->sendError($validator->errors()->first());
+            }
+
+            $user = User::where('mobile', $request->mobile)
+                ->where('status', 1)
+                ->where('is_admin', 0)
+                ->first();
+
+            if (!$user) {
+                return $this->sendError('User not found or inactive.');
+            }
+
+            $otpRecord = OtpVerification::where([
+                'mobile' => $request->mobile,
+                'otp' => $request->otp,
+                'type' => 'login',
+            ])->first();
+
+            if (!$otpRecord || $otpRecord->is_verified || now()->gt($otpRecord->expires_at)) {
+                return $this->sendError('Invalid or expired OTP.');
+            }
+
+            // Mark OTP as verified
+            $otpRecord->is_verified = true;
+            $otpRecord->save();
+
+            $token = $user->createToken('MyApp')->accessToken;
+
+            return $this->sendResponse([
+                'token' => $token,
+                'name' => $user->name,
+            ], 'User logged in successfully.');
+        } catch (\Exception $e) {
+            return $this->sendError('Login failed.', ['error' => $e->getMessage()]);
         }
     }
 

@@ -26,6 +26,9 @@ Route::post('/register/send-otp', [AuthenticationController::class, 'sendOtpForR
 Route::post('/register/verify-otp', [AuthenticationController::class, 'verifyOtpAndRegister']);
 Route::post('login', [AuthenticationController::class, 'login'])->name('login');
 
+Route::post('user/send-login-otp', [AuthenticationController::class, 'sendOtpForLogin']);
+Route::post('user/verify-login-otp', [AuthenticationController::class, 'verifyOtpAndLogin']);
+
 //Site Setting Route
 Route::get('/site-setting-show', [SiteSettingController::class, 'show']);
 
