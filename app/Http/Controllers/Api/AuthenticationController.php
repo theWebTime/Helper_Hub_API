@@ -16,39 +16,6 @@ use Illuminate\Validation\Rule;
 
 class AuthenticationController extends BaseController
 {
-    /**
-     * Register API
-     */
-    // public function register(Request $request): JsonResponse
-    // {
-    //     try {
-    //         $validator = Validator::make($request->all(), [
-    //             'name' => 'required|string|max:255',
-    //             'email' => 'required|email|unique:users,email',
-    //             'mobile' => 'required|string|unique:users,mobile',
-    //             'password' => 'required|string|min:6',
-    //             'c_password' => 'required|same:password',
-    //         ]);
-
-    //         if ($validator->fails()) {
-    //             return $this->sendError('Validation Error.', $validator->errors());
-    //         }
-
-    //         $input = $request->only(['name', 'email', 'mobile', 'password']);
-    //         $input['password'] = bcrypt($input['password']);
-    //         $input['is_admin'] = 0; // Default
-    //         $input['status'] = 1;   // Active by default
-
-    //         $user = User::create($input);
-
-    //         $success['token'] = $user->createToken('MyApp')->accessToken;
-    //         $success['name'] = $user->name;
-
-    //         return $this->sendResponse($success, 'User registered successfully.');
-    //     } catch (\Exception $e) {
-    //         return $this->sendError('Registration failed.', ['error' => $e->getMessage()]);
-    //     }
-    // }
 
     public function sendOtpForRegistration(Request $request): JsonResponse
     {
@@ -336,8 +303,22 @@ class AuthenticationController extends BaseController
 
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
-                'email' => 'required|email|unique:users,email,' . $user->id,
-                'mobile' => 'required|string|unique:users,mobile,' . $user->id,
+                'email' => [
+                    'required',
+                    'email',
+                    Rule::unique('users', 'email')->ignore($user->id),
+                ],
+                'mobile' => [
+                    'required',
+                    'digits:10',
+                    'regex:/^[6-9][0-9]{9}$/',
+                    Rule::unique('users', 'mobile')->ignore($user->id),
+                ],
+            ], [
+                'mobile.required' => 'Mobile number is required.',
+                'mobile.digits' => 'Mobile number must be exactly 10 digits.',
+                'mobile.regex' => 'Mobile number must start with 6, 7, 8, or 9.',
+                'mobile.unique' => 'This mobile number is already registered.',
             ]);
 
             if ($validator->fails()) {
@@ -352,6 +333,111 @@ class AuthenticationController extends BaseController
             return $this->sendResponse($user, 'Profile updated successfully.');
         } catch (\Exception $e) {
             return $this->sendError('Profile update failed.', ['error' => $e->getMessage()]);
+        }
+    }
+
+    // STEP 1: Send OTP for Password Reset
+    public function sendOtpForPasswordReset(Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'mobile' => [
+                    'required',
+                    'digits:10',
+                    'regex:/^[6-9][0-9]{9}$/',
+                    'exists:users,mobile',
+                ],
+            ], [
+                'mobile.required' => 'Mobile number is required.',
+                'mobile.digits' => 'Mobile number must be exactly 10 digits.',
+                'mobile.regex' => 'Mobile number must start with 6, 7, 8, or 9.',
+                'mobile.exists' => 'This mobile number is not registered.',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->sendError($validator->errors()->first());
+            }
+
+            $user = User::where('mobile', $request->mobile)->where('is_admin', 0)->where('status', 1)->first();
+            if (!$user) {
+                return $this->sendError('User not found or inactive.');
+            }
+
+            $otp = '1234'; // Static for now
+            $expiresAt = now()->addMinutes(2);
+
+            OtpVerification::updateOrCreate(
+                [
+                    'mobile' => $request->mobile,
+                    'type' => 'forgot_password',
+                ],
+                [
+                    'otp' => $otp,
+                    'is_verified' => false,
+                    'expires_at' => $expiresAt,
+                ]
+            );
+
+            return $this->sendResponse([], 'OTP sent successfully (1234). Valid for 2 minutes.');
+        } catch (\Exception $e) {
+            return $this->sendError('Failed to send OTP.', ['error' => $e->getMessage()]);
+        }
+    }
+
+    // STEP 2: Reset Password via OTP
+    public function resetPasswordWithOtp(Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'mobile' => [
+                    'required',
+                    'digits:10',
+                    'regex:/^[6-9][0-9]{9}$/',
+                    'exists:users,mobile',
+                ],
+                'otp' => 'required|string',
+                'password' => 'required|string|min:6',
+                'c_password' => 'required|same:password',
+            ], [
+                'mobile.required' => 'Mobile number is required.',
+                'mobile.digits' => 'Mobile number must be exactly 10 digits.',
+                'mobile.regex' => 'Mobile number must start with 6, 7, 8, or 9.',
+                'mobile.exists' => 'This mobile number is not registered.',
+                'otp.required' => 'OTP is required.',
+                'password.required' => 'Password is required.',
+                'password.min' => 'Password must be at least 6 characters.',
+                'c_password.required' => 'Confirm Password is required.',
+                'c_password.same' => 'Confirm Password must match Password.',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->sendError($validator->errors()->first());
+            }
+
+            $otpRecord = OtpVerification::where([
+                'mobile' => $request->mobile,
+                'otp' => $request->otp,
+                'type' => 'forgot_password',
+            ])->first();
+
+            if (!$otpRecord || $otpRecord->is_verified || now()->gt($otpRecord->expires_at)) {
+                return $this->sendError('Invalid or expired OTP.');
+            }
+
+            $user = User::where('mobile', $request->mobile)->where('is_admin', 0)->first();
+            if (!$user) {
+                return $this->sendError('User not found.');
+            }
+
+            $user->password = bcrypt($request->password);
+            $user->save();
+
+            $otpRecord->is_verified = true;
+            $otpRecord->save();
+
+            return $this->sendResponse([], 'Password reset successfully.');
+        } catch (\Exception $e) {
+            return $this->sendError('Password reset failed.', ['error' => $e->getMessage()]);
         }
     }
 
@@ -372,17 +458,5 @@ class AuthenticationController extends BaseController
         } catch (\Exception $e) {
             return $this->sendError('something went wrong!', $e);
         }
-    }
-
-    public function admin(Request $request): JsonResponse
-    {
-        dd("working");
-        return "working";
-    }
-    public function user(Request $request): JsonResponse
-    {
-        dd("working");
-
-        return "working";
     }
 }

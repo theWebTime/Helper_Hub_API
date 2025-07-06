@@ -1,5 +1,5 @@
 <?php
- 
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthenticationController;
@@ -15,34 +15,39 @@ use App\Http\Controllers\API\SubServiceTypeNameController;
 use App\Http\Controllers\API\SubServiceTypeDetailController;
 use App\Http\Controllers\API\SubServiceController;
 
- 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:api');
- 
-// Public routes (no authentication required)
-// Route::post('register', [AuthenticationController::class, 'register'])->name('register');
-Route::post('/register/send-otp', [AuthenticationController::class, 'sendOtpForRegistration']);
-Route::post('/register/verify-otp', [AuthenticationController::class, 'verifyOtpAndRegister']);
-Route::post('login', [AuthenticationController::class, 'login'])->name('login');
+// Admin Login
+Route::post('login', [AuthenticationController::class, 'login']);
 
-Route::post('user/send-login-otp', [AuthenticationController::class, 'sendOtpForLogin']);
-Route::post('user/verify-login-otp', [AuthenticationController::class, 'verifyOtpAndLogin']);
+// User Registration
+Route::group(['prefix' => '/register'], function () {
+    Route::post('/send-otp', [AuthenticationController::class, 'sendOtpForRegistration'])->middleware('throttle:3,1');
+    Route::post('/verify-otp', [AuthenticationController::class, 'verifyOtpAndRegister']);
+});
 
-//Site Setting Route
-Route::get('/site-setting-show', [SiteSettingController::class, 'show']);
+Route::group(['prefix' => '/user'], function () {
 
-// Protected routes (authentication required)
-Route::middleware('auth:api')->group(function () {
-    Route::post('logout', [AuthenticationController::class, 'logout'])->name('logout');
+    // User Login
+    Route::post('/send-login-otp', [AuthenticationController::class, 'sendOtpForLogin'])->middleware('throttle:3,1');
+    Route::post('/verify-login-otp', [AuthenticationController::class, 'verifyOtpAndLogin']);
+
+    // Reset Password (User Only - via OTP)
+    Route::post('/send-reset-password-otp', [AuthenticationController::class, 'sendOtpForPasswordReset'])->middleware('throttle:3,1');
+    Route::post('/reset-password', [AuthenticationController::class, 'resetPasswordWithOtp']);
+});
+
+// open apis without auth
+Route::get('/site-setting-show', [SiteSettingController::class, 'show']); //Site Setting Route
+
+// routes which will be use in both admin and user role
+Route::middleware(['auth:api', 'role:admin,user'])->group(function () {
+    Route::post('logout', [AuthenticationController::class, 'logout']);
+    Route::get('profile', [AuthenticationController::class, 'profile']);
     Route::put('profile/update', [AuthenticationController::class, 'updateProfile']);
-    Route::get('profile', [AuthenticationController::class, 'profile'])->name('profile');
 });
 
 
+// routes which will be use in admin only
 Route::middleware(['auth:api', 'role:admin'])->group(function () {
-    Route::post('/check-admin', [AuthenticationController::class, 'admin']);
-
     // Registered User Route
     Route::group(['prefix' => '/user'], function () {
         Route::get('/index', [UserController::class, 'index']);
@@ -78,7 +83,7 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
     });
 
     // User Address List Route
-        Route::get('/user-address-list', [UserAddressController::class, 'userAddressList']);
+    Route::get('/user-address-list', [UserAddressController::class, 'userAddressList']);
 
     // Privacy Policy Routes
     Route::group(['prefix' => '/privacy-policy'], function () {
@@ -126,9 +131,8 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
     });
 });
 
+// routes which will be use in user only
 Route::middleware(['auth:api', 'role:user'])->group(function () {
-    Route::post('/check-user', [AuthenticationController::class, 'user']);
-
     // Privacy Policy Show API
     Route::get('/privacy-policy-index', [PrivacyPolicyController::class, 'index']);
 
@@ -148,10 +152,8 @@ Route::middleware(['auth:api', 'role:user'])->group(function () {
     });
 
     // Sub Service Type Name List Route API
-    Route::get('/sub-service-type-name-list', [SubServiceTypeNameController::class, 'list']);
+    // Route::get('/sub-service-type-name-list', [SubServiceTypeNameController::class, 'list']);
 
     // Sub Service Type Detail List Route API
     Route::get('/sub-service-type-detail-list', [SubServiceTypeDetailController::class, 'index']);
-    
 });
-

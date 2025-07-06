@@ -8,7 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next, $role): Response
+    public function handle(Request $request, Closure $next, ...$roles): Response
     {
         $user = auth()->user();
 
@@ -16,14 +16,16 @@ class RoleMiddleware
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        if ($role === 'admin' && !$user->is_admin) {
-            return response()->json(['message' => 'Forbidden: Admins only'], 403);
+        // Check if user has any of the required roles
+        foreach ($roles as $role) {
+            if ($role === 'admin' && $user->is_admin) {
+                return $next($request);
+            }
+            if ($role === 'user' && !$user->is_admin) {
+                return $next($request);
+            }
         }
 
-        if ($role === 'user' && $user->is_admin) {
-            return response()->json(['message' => 'Forbidden: Users only'], 403);
-        }
-
-        return $next($request);
+        return response()->json(['message' => 'Forbidden: Insufficient permissions'], 403);
     }
 }

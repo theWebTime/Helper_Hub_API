@@ -2,15 +2,13 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\Service;
-
+use Illuminate\Support\Facades\DB;
 class ServiceSeeder extends Seeder
 {
     public function run(): void
     {
-        Service::create([
+        DB::table('services')->insert([[
             'name' => 'One Time Service',
             'description' => 'You can get a person for one day only.',
             'image' => null,
@@ -21,6 +19,6 @@ class ServiceSeeder extends Seeder
             'description' => 'You can get a person for one month.',
             'image' => null,
             'status' => 1,
-        ]);
+        ]]);
     }
 }
