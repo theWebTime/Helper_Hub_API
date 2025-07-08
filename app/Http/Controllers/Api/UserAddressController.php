@@ -13,10 +13,21 @@ use Illuminate\Http\JsonResponse;
 
 class UserAddressController extends BaseController
 {
+    public function pincodeList()
+    {
+        try{
+            $data = PinCode::where('status', '=', 1)->select('id', 'pin_code')->get();
+            return $this->sendResponse($data, 'Pincode retrieved successfully.');
+        } catch (Exception $e) {
+            return $this->sendError('something went wrong!', $e);
+        }
+    }
+
     public function index(Request $request): JsonResponse
     {
         try {
-            $data = UserAddress::where('user_id', auth()->id())
+            $data = UserAddress::where('user_id', auth()->id())->join('pin_codes', 'pin_codes.id', '=', 'user_addresses.pin_code_id')
+                ->select('user_addresses.id', 'pin_codes.pin_code', 'type', 'title', 'name', 'phone', 'address', 'landmark')
                 ->when($request->search, function ($query) use ($request) {
                     $query->where('address', 'like', "%{$request->search}%");
                 })
@@ -130,7 +141,7 @@ class UserAddressController extends BaseController
         }
     }
 
-    public function destroy($id): JsonResponse
+    public function delete($id): JsonResponse
     {
         try {
             $address = UserAddress::where('id', $id)->where('user_id', auth()->id())->firstOrFail();

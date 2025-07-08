@@ -153,6 +153,7 @@ Route::middleware(['auth:api', 'role:user'])->group(function () {
 
     // User Address Route API
     Route::group(['prefix' => '/user-address'], function () {
+        Route::get('/pincode-list', [UserAddressController::class, 'pincodeList']);
         Route::get('/index', [UserAddressController::class, 'index']);
         Route::post('/store', [UserAddressController::class, 'store']);
         Route::get('/show/{id}', [UserAddressController::class, 'show']);
