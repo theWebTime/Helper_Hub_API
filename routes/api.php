@@ -39,11 +39,6 @@ Route::group(['prefix' => '/user'], function () {
 // open apis without auth
 Route::get('/site-setting-show', [SiteSettingController::class, 'show']); //Site Setting Route
 
-Route::group(['prefix' => '/razorpay'], function () {
-    Route::post('/create-order', [RazorpayController::class, 'createOrder']);
-    Route::post('/verify-signature', [RazorpayController::class, 'verifySignature']);
-});
-
 // routes which will be use in both admin and user role
 Route::middleware(['auth:api', 'role:admin,user'])->group(function () {
     Route::post('logout', [AuthenticationController::class, 'logout']);
@@ -140,7 +135,10 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
 // routes which will be use in user only
 Route::middleware(['auth:api', 'role:user'])->group(function () {
 
-    
+    Route::group(['prefix' => '/razorpay'], function () {
+        Route::post('/create-order', [RazorpayController::class, 'createOrder']);
+        Route::post('/verify-signature', [RazorpayController::class, 'verifySignature']);
+    });
     
     // Privacy Policy Show API
     Route::get('/privacy-policy-index', [PrivacyPolicyController::class, 'index']);
