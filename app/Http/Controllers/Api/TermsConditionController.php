@@ -18,7 +18,7 @@ class TermsConditionController extends BaseController
                 if ($request->search != null) {
                     $query->where('title', 'like', '%' . $request->search . '%');
                 }
-            })->orderBy('id', 'DESC')->paginate($request->itemsPerPage ?? 10);
+            })->orderBy('id', 'ASC')->paginate($request->itemsPerPage ?? 10);
             return $this->sendResponse($data, 'Terms & Condition retrieved successfully.');
         } catch (Exception $e) {
             return $this->sendError('something went wrong!', $e);

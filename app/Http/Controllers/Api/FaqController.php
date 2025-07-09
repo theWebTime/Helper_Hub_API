@@ -18,7 +18,7 @@ class FaqController extends BaseController
                 if ($request->search != null) {
                     $query->where('question', 'like', '%' . $request->search . '%');
                 }
-            })->orderBy('id', 'DESC')->paginate($request->itemsPerPage ?? 10);
+            })->orderBy('id', 'ASC')->paginate($request->itemsPerPage ?? 10);
             return $this->sendResponse($data, 'FAQ retrieved successfully.');
         } catch (Exception $e) {
             return $this->sendError('something went wrong!', $e);
@@ -87,4 +87,5 @@ class FaqController extends BaseController
             return $this->sendError('something went wrong!', $e);
         }
     }
+    
 }
