@@ -18,7 +18,7 @@ class SubServiceTypeNameController extends BaseController
                 if ($request->search != null) {
                     $query->where('name', 'like', '%' . $request->search . '%');
                 }
-            })->orderBy('id', 'DESC')->paginate($request->itemsPerPage ?? 10);
+            })->orderBy('id', 'ASC')->paginate($request->itemsPerPage ?? 10);
 
             return $this->sendResponse($data, 'Sub Service Type Names retrieved successfully.');
         } catch (\Exception $e) {
