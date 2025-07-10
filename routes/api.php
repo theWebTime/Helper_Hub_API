@@ -36,8 +36,18 @@ Route::group(['prefix' => '/user'], function () {
     Route::post('/reset-password', [AuthenticationController::class, 'resetPasswordWithOtp']);
 });
 
-// open apis without auth
-Route::get('/site-setting-show', [SiteSettingController::class, 'show']); //Site Setting Route
+// ***********   open apis without auth   **********
+// Site Setting Route
+Route::get('/site-setting-show', [SiteSettingController::class, 'show']);
+
+// Privacy Policy Show API
+Route::get('/privacy-policy-index', [PrivacyPolicyController::class, 'index']);
+
+// FAQ Show API
+Route::get('/faq-index', [FaqController::class, 'index']);
+
+// Terms & Conditions Show API
+Route::get('/terms-condition-index', [TermsConditionController::class, 'index']);
 
 // routes which will be use in both admin and user role
 Route::middleware(['auth:api', 'role:admin,user'])->group(function () {
@@ -139,15 +149,6 @@ Route::middleware(['auth:api', 'role:user'])->group(function () {
         Route::post('/create-order', [RazorpayController::class, 'createOrder']);
         Route::post('/verify-signature', [RazorpayController::class, 'verifySignature']);
     });
-    
-    // Privacy Policy Show API
-    Route::get('/privacy-policy-index', [PrivacyPolicyController::class, 'index']);
-
-    // FAQ Show API
-    Route::get('/faq-index', [FaqController::class, 'index']);
-
-    // Terms & Conditions Show API
-    Route::get('/terms-condition-index', [TermsConditionController::class, 'index']);
 
     // User Address Route API
     Route::group(['prefix' => '/user-address'], function () {
