@@ -37,6 +37,8 @@ Route::group(['prefix' => '/user'], function () {
 });
 
 // ***********   open apis without auth   **********
+Route::get('subservices/by-service/{serviceId}', [SubserviceController::class, 'getSubservicesByServiceId']);
+
 // Site Setting Route
 Route::get('/site-setting-show', [SiteSettingController::class, 'show']);
 
