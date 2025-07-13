@@ -140,10 +140,14 @@ class SubServiceController extends BaseController
             $rawResults = DB::table('subservices')
                 ->join('services', 'subservices.service_id', '=', 'services.id')
                 ->leftJoin('subservice_type_names', function ($join) {
+                    // match every slug that appears in type_slugs
                     $join->whereRaw("FIND_IN_SET(subservice_type_names.slug, subservices.type_slugs)");
                 })
-                ->leftJoin('subservice_type_details', 'subservice_type_details.subservice_type_name_slug', '=', 'subservice_type_names.slug')
-                ->where('subservices.service_id', $serviceId)
+                ->leftJoin('subservice_type_details', function ($join) use ($serviceId) {
+                    $join->on('subservice_type_details.subservice_type_name_slug', '=', 'subservice_type_names.slug')
+                        ->where('subservice_type_details.service_id', '=', $serviceId);   // 👈 NEW
+                })
+                ->where('subservices.service_id', $serviceId)       // still limit subservices themselves
                 ->where('subservices.status', true)
                 ->select(
                     'subservices.id as subservice_id',
@@ -151,10 +155,12 @@ class SubServiceController extends BaseController
                     'subservices.description',
                     'subservices.image',
                     'subservices.type_slugs',
+
                     'subservice_type_names.slug as type_slug',
                     'subservice_type_names.name as type_name',
                     'subservice_type_names.unit_label',
                     'subservice_type_names.example',
+
                     'subservice_type_details.label as detail_label',
                     'subservice_type_details.price as detail_price'
                 )
@@ -205,11 +211,11 @@ class SubServiceController extends BaseController
                 $filteredTypes = collect($sub['types'])->filter(function ($type) {
                     return !empty($type['details']);
                 });
-            
+
                 if ($filteredTypes->isEmpty()) {
                     return null;
                 }
-            
+
                 $sub['types'] = $filteredTypes->values();
                 return $sub;
             })->filter()->values();

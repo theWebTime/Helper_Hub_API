@@ -16,6 +16,13 @@ class SubServiceTypeDetailController extends BaseController
     {
         try {
             $data = SubserviceTypeName::select('name', 'slug')->get();
+            // $data = SubserviceTypeName::select('name', 'slug')
+            // ->whereExists(function ($q) {
+            //     $q->select(DB::raw(1))
+            //       ->from('subservice_type_details as d')
+            //       ->whereColumn('d.subservice_type_name_slug', 'subservice_type_names.slug');
+            // })
+            // ->get();
             return $this->sendResponse($data, 'Sub Service Type Slug retrieved successfully.');
         } catch (Exception $e) {
             return $this->sendError('something went wrong!', $e);
@@ -25,11 +32,11 @@ class SubServiceTypeDetailController extends BaseController
     public function index(Request $request)
     {
         try {
-            $data = SubserviceTypeDetail::select('id', 'subservice_type_name_slug', 'label', 'price')->where(function ($query) use ($request) {
+            $data = SubserviceTypeDetail::join('services', 'services.id', '=', 'subservice_type_details.service_id')->select('subservice_type_details.id', 'services.name as service_name', 'subservice_type_details.subservice_type_name_slug', 'subservice_type_details.label', 'subservice_type_details.price')->where(function ($query) use ($request) {
                 if ($request->search != null) {
-                    $query->where('label', 'like', '%' . $request->search . '%');
+                    $query->where('subservice_type_details.label', 'like', '%' . $request->search . '%');
                 }
-            })->orderBy('id', 'DESC')->paginate($request->itemsPerPage ?? 10);
+            })->orderBy('subservice_type_details.id', 'DESC')->paginate($request->itemsPerPage ?? 10);
 
             return $this->sendResponse($data, 'Sub Service Type Details retrieved successfully.');
         } catch (Exception $e) {
@@ -43,6 +50,7 @@ class SubServiceTypeDetailController extends BaseController
         try {
             $input = $request->all();
             $validator = Validator::make($input, [
+                'service_id' => 'required|exists:services,id',
                 'subservice_type_name_slug' => 'required|exists:subservice_type_names,slug',
                 'label' => 'required',
                 'price' => 'required',
@@ -50,7 +58,7 @@ class SubServiceTypeDetailController extends BaseController
             if ($validator->fails()) {
                 return $this->sendError('Validation Error.', $validator->errors());
             }
-            $updateData = (['subservice_type_name_slug' => $input['subservice_type_name_slug'], 'label' => $input['label'], 'price' => $input['price']]);
+            $updateData = (['service_id' => $input['service_id'], 'subservice_type_name_slug' => $input['subservice_type_name_slug'], 'label' => $input['label'], 'price' => $input['price']]);
             SubserviceTypeDetail::create($updateData);
             return $this->sendResponse([], 'Sub Service Type Details created successfully.');
         } catch (Exception $e) {
@@ -62,7 +70,7 @@ class SubServiceTypeDetailController extends BaseController
     {
         //Using Try & Catch For Error Handling
         try {
-            $data = SubserviceTypeDetail::where('id', $id)->select('id', 'subservice_type_name_slug', 'label', 'price')->first();
+            $data = SubserviceTypeDetail::where('id', $id)->select('id', 'service_id', 'subservice_type_name_slug', 'label', 'price')->first();
             return $this->sendResponse($data, 'Sub Service Type Details retrieved successfully.');
         } catch (Exception $e) {
             return $this->sendError('something went wrong!', $e);
@@ -75,6 +83,7 @@ class SubServiceTypeDetailController extends BaseController
         try {
             $input = $request->all();
             $validator = Validator::make($input, [
+                'service_id' => 'required|exists:services,id',
                 'subservice_type_name_slug' => 'required|exists:subservice_type_names,slug',
                 'label' => 'required',
                 'price' => 'required',
@@ -82,11 +91,11 @@ class SubServiceTypeDetailController extends BaseController
             if ($validator->fails()) {
                 return $this->sendError('Validation Error.', $validator->errors());
             }
-            $updateData = (['subservice_type_name_slug' => $input['subservice_type_name_slug'], 'label' => $input['label'], 'price' => $input['price']]);
+            $updateData = (['service_id' => $input['service_id'], 'subservice_type_name_slug' => $input['subservice_type_name_slug'], 'label' => $input['label'], 'price' => $input['price']]);
             SubserviceTypeDetail::where('id', $id)->update($updateData);
             return $this->sendResponse([], 'Sub Service Type Details updated successfully.');
         } catch (Exception $e) {
-            return $e;
+            // return $e;
             return $this->sendError('something went wrong!', $e);
         }
     }

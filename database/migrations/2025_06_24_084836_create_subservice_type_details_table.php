@@ -9,6 +9,7 @@ return new class extends Migration {
     {
         Schema::create('subservice_type_details', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('service_id')->constrained()->onDelete('cascade');
             $table->string('subservice_type_name_slug'); // e.g., "bhk"
             $table->string('label'); // e.g., "1 BHK"
             $table->decimal('price', 10, 2);
