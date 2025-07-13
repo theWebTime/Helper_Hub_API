@@ -51,6 +51,12 @@ Route::get('/faq-index', [FaqController::class, 'index']);
 // Terms & Conditions Show API
 Route::get('/terms-condition-index', [TermsConditionController::class, 'index']);
 
+// Service List API Route
+Route::get('/service-list', [SubServiceController::class, 'serviceList']);
+
+//$ Random Sub Service List Route
+Route::get('/random-sub-service-list', [SubServiceController::class, 'randomSubServiceList']);
+
 // routes which will be use in both admin and user role
 Route::middleware(['auth:api', 'role:admin,user'])->group(function () {
     Route::post('logout', [AuthenticationController::class, 'logout']);
