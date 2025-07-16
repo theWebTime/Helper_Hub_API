@@ -49,6 +49,7 @@ Route::get('/terms-condition-index', [TermsConditionController::class, 'index'])
 
 // Service List API Route
 Route::get('/service-list', [SubServiceController::class, 'serviceList']);
+Route::get('/pincode-list', [UserAddressController::class, 'pincodeList']);
 
 //$ Random Sub Service List Route
 Route::get('/random-sub-service-list', [SubServiceController::class, 'randomSubServiceList']);
