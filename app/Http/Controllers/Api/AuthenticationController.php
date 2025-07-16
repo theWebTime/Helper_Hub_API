@@ -308,6 +308,7 @@ class AuthenticationController extends BaseController
                     'email',
                     Rule::unique('users', 'email')->ignore($user->id),
                 ],
+                'password' => 'nullable|min:6|regex:/[a-z]/|regex:/[A-Z]/|regex:/[0-9]/|max:20',
                 'mobile' => [
                     'required',
                     'digits:10',
@@ -323,6 +324,10 @@ class AuthenticationController extends BaseController
 
             if ($validator->fails()) {
                 return $this->sendError('Validation Error.', $validator->errors());
+            }
+
+             if ($request->filled('password')) {
+                $user['password'] = bcrypt($request->password);
             }
 
             $user->name = $request->name;

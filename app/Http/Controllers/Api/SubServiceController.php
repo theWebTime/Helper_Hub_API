@@ -27,7 +27,7 @@ class SubServiceController extends BaseController
     public function randomSubServiceList(Request $request)
     {
         try {
-            $data = Subservice::select('id', 'name')->inRandomOrder()->limit(4)->get();
+            $data = Subservice::select('id', 'name', 'image')->inRandomOrder()->limit(4)->get();
             return $this->sendResponse($data, 'Sub Service retrieved successfully.');
         } catch (Exception $e) {
             return $this->sendError('something went wrong!', $e);

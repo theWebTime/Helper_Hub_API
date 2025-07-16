@@ -15,6 +15,7 @@ use App\Http\Controllers\API\SubServiceTypeNameController;
 use App\Http\Controllers\API\SubServiceTypeDetailController;
 use App\Http\Controllers\API\SubServiceController;
 use App\Http\Controllers\API\RazorpayController;
+use App\Http\Controllers\API\ContactUsController;
 
 // Admin Login
 Route::post('login', [AuthenticationController::class, 'login']);
@@ -54,14 +55,17 @@ Route::get('/terms-condition-index', [TermsConditionController::class, 'index'])
 // Service List API Route
 Route::get('/service-list', [SubServiceController::class, 'serviceList']);
 
-//$ Random Sub Service List Route
+// Random Sub Service List Route
 Route::get('/random-sub-service-list', [SubServiceController::class, 'randomSubServiceList']);
+
+// Contact Us Route API
+    Route::get('/contact-us-store', [ContactUsController::class, 'store']);
 
 // routes which will be use in both admin and user role
 Route::middleware(['auth:api', 'role:admin,user'])->group(function () {
     Route::post('logout', [AuthenticationController::class, 'logout']);
     Route::get('profile', [AuthenticationController::class, 'profile']);
-    Route::put('profile/update', [AuthenticationController::class, 'updateProfile']);
+    Route::post('profile/update', [AuthenticationController::class, 'updateProfile']);
 });
 
 
@@ -148,6 +152,9 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
         Route::post('/update/{id}', [SubServiceTypeDetailController::class, 'update']);
         Route::post('/delete/{id}', [SubServiceTypeDetailController::class, 'delete']);
     });
+
+    // Contact Us List Route
+    Route::get('/contact-us-list', [ContactUsController::class, 'index']);
 });
 
 // routes which will be use in user only
@@ -168,9 +175,7 @@ Route::middleware(['auth:api', 'role:user'])->group(function () {
         Route::post('/delete/{id}', [UserAddressController::class, 'delete']);
     });
 
-    // Sub Service Type Name List Route API
-    // Route::get('/sub-service-type-name-list', [SubServiceTypeNameController::class, 'list']);
-
     // Sub Service Type Detail List Route API
     Route::get('/sub-service-type-detail-list', [SubServiceTypeDetailController::class, 'index']);
+
 });
