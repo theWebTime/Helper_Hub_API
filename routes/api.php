@@ -31,10 +31,6 @@ Route::group(['prefix' => '/user'], function () {
     // User Login
     Route::post('/send-login-otp', [AuthenticationController::class, 'sendOtpForLogin'])->middleware('throttle:3,1');
     Route::post('/verify-login-otp', [AuthenticationController::class, 'verifyOtpAndLogin']);
-
-    // Reset Password (User Only - via OTP)
-    Route::post('/send-reset-password-otp', [AuthenticationController::class, 'sendOtpForPasswordReset'])->middleware('throttle:3,1');
-    Route::post('/reset-password', [AuthenticationController::class, 'resetPasswordWithOtp']);
 });
 
 // ***********   open apis without auth   **********
@@ -54,6 +50,7 @@ Route::get('/terms-condition-index', [TermsConditionController::class, 'index'])
 
 // Service List API Route
 Route::get('/service-list', [SubServiceController::class, 'serviceList']);
+Route::get('/pincode-list', [UserAddressController::class, 'pincodeList']);
 
 // Random Sub Service List Route
 Route::get('/random-sub-service-list', [SubServiceController::class, 'randomSubServiceList']);
