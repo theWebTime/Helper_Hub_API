@@ -100,7 +100,7 @@ class SubServiceController extends BaseController
                 'type_slugs' => 'required',
                 'name' => 'required',
                 'description' => 'nullable',
-                'status' => 'nullable',
+                'status' => 'required|in:0,1',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:5120',
             ]);
 

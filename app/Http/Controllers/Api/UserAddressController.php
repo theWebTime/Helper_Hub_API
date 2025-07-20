@@ -47,11 +47,11 @@ class UserAddressController extends BaseController
                 'pin_code_id' => 'required|exists:pin_codes,id',
                 'type' => 'required|in:home,office,other',
                 'address' => 'required|string',
-                'title' => 'nullable|string',
-                'name' => 'nullable|string',
-                'phone' => 'nullable|string',
-                'landmark' => 'nullable|string',
-                'is_default' => 'nullable|boolean',
+                'title' => 'required|string',
+                'name' => 'required|string',
+                'phone' => 'required|string',
+                'landmark' => 'required|string',
+                'is_default' => 'required|boolean',
             ]);
 
             if ($validator->fails()) {
@@ -104,11 +104,11 @@ class UserAddressController extends BaseController
                 'pin_code_id' => 'required|exists:pin_codes,id',
                 'type' => 'required|in:home,office,other',
                 'address' => 'required|string',
-                'title' => 'nullable|string',
-                'name' => 'nullable|string',
-                'phone' => 'nullable|string',
-                'landmark' => 'nullable|string',
-                'is_default' => 'nullable|boolean',
+                'title' => 'required|string',
+                'name' => 'required|string',
+                'phone' => 'required|string',
+                'landmark' => 'required|string',
+                'is_default' => 'required|boolean',
             ]);
 
             if ($validator->fails()) {

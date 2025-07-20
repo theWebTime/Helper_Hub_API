@@ -38,7 +38,7 @@ class SubServiceTypeDetailController extends BaseController
                 }
             })->orderBy('subservice_type_details.id', 'DESC')->paginate($request->itemsPerPage ?? 10);
 
-            return $this->sendResponse($data, 'Sub Service Type Details retrieved successfully.');
+            return $this->sendResponse($data, 'Sub Service Pricing retrieved successfully.');
         } catch (Exception $e) {
             return $this->sendError('something went wrong!', $e);
         }
@@ -60,7 +60,7 @@ class SubServiceTypeDetailController extends BaseController
             }
             $updateData = (['service_id' => $input['service_id'], 'subservice_type_name_slug' => $input['subservice_type_name_slug'], 'label' => $input['label'], 'price' => $input['price']]);
             SubserviceTypeDetail::create($updateData);
-            return $this->sendResponse([], 'Sub Service Type Details created successfully.');
+            return $this->sendResponse([], 'Sub Service Pricing created successfully.');
         } catch (Exception $e) {
             return $this->sendError('something went wrong!', $e);
         }
@@ -71,7 +71,7 @@ class SubServiceTypeDetailController extends BaseController
         //Using Try & Catch For Error Handling
         try {
             $data = SubserviceTypeDetail::where('id', $id)->select('id', 'service_id', 'subservice_type_name_slug', 'label', 'price')->first();
-            return $this->sendResponse($data, 'Sub Service Type Details retrieved successfully.');
+            return $this->sendResponse($data, 'Sub Service Pricing retrieved successfully.');
         } catch (Exception $e) {
             return $this->sendError('something went wrong!', $e);
         }
@@ -93,7 +93,7 @@ class SubServiceTypeDetailController extends BaseController
             }
             $updateData = (['service_id' => $input['service_id'], 'subservice_type_name_slug' => $input['subservice_type_name_slug'], 'label' => $input['label'], 'price' => $input['price']]);
             SubserviceTypeDetail::where('id', $id)->update($updateData);
-            return $this->sendResponse([], 'Sub Service Type Details updated successfully.');
+            return $this->sendResponse([], 'Sub Service Pricing updated successfully.');
         } catch (Exception $e) {
             // return $e;
             return $this->sendError('something went wrong!', $e);
@@ -105,7 +105,7 @@ class SubServiceTypeDetailController extends BaseController
         //Using Try & Catch For Error Handling
         try {
             DB::table('subservice_type_details')->where('id', $id)->delete();
-            return $this->sendResponse([], 'Sub Service Type Details deleted successfully.');
+            return $this->sendResponse([], 'Sub Service Pricing deleted successfully.');
         } catch (Exception $e) {
             return $this->sendError('something went wrong!', $e);
         }
