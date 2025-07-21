@@ -2,10 +2,10 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\AuthenticationController;
-use App\Http\Controllers\Api\PrivacyPolicyController;
-use App\Http\Controllers\Api\FaqController;
-use App\Http\Controllers\Api\TermsConditionController;
+use App\Http\Controllers\API\AuthenticationController;
+use App\Http\Controllers\API\PrivacyPolicyController;
+use App\Http\Controllers\API\FaqController;
+use App\Http\Controllers\API\TermsConditionController;
 use App\Http\Controllers\API\UserAddressController;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\ServiceController;
