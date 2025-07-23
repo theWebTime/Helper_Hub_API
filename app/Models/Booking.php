@@ -14,16 +14,14 @@ class Booking extends Model
         'user_id',
         'service_id',
         'subservice_id',
-        'subservice_type_detail_id',
-        'pin_code_id',
-        'customer_name',
-        'customer_mobile',
-        'customer_address',
+        'user_address_id',
         'service_price',
         'platform_fee',
         'total_amount',
-        'preferred_date',
-        'preferred_time',
+        'schedule_date',
+        'schedule_time',
+        'schedule_end_date',
+        'is_dog',
         'special_instructions',
         'payment_status',
         'payment_id',
@@ -34,4 +32,17 @@ class Booking extends Model
         'cancellation_reason',
         'cancelled_at',
     ];
+
+    public function subserviceTypeDetails(array $details = [])
+{
+    // Manually insert into pivot table
+    if (!empty($details)) {
+        foreach ($details as $detailId) {
+            \DB::table('booking_subservice_type_detail')->insert([
+                'booking_id' => $this->id,
+                'subservice_type_detail_id' => $detailId,
+            ]);
+        }
+    }
+}
 }

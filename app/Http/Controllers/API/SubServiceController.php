@@ -160,6 +160,7 @@ class SubServiceController extends BaseController
                 ->where('subservices.service_id', $serviceId)       // still limit subservices themselves
                 ->where('subservices.status', true)
                 ->select(
+                    'subservices.service_id as service_id',
                     'subservices.id as subservice_id',
                     'subservices.name as subservice_name',
                     'subservices.description',
@@ -171,6 +172,7 @@ class SubServiceController extends BaseController
                     'subservice_type_names.unit_label',
                     'subservice_type_names.example',
 
+                    'subservice_type_details.id as detail_id',
                     'subservice_type_details.label as detail_label',
                     'subservice_type_details.price as detail_price'
                 )
@@ -188,6 +190,7 @@ class SubServiceController extends BaseController
                 if (!isset($grouped[$subId])) {
                     $grouped[$subId] = [
                         'id' => $subId,
+                        'service_id' => $row->service_id,
                         'name' => $row->subservice_name,
                         'description' => $row->description,
                         'image' => $row->image,
@@ -209,6 +212,7 @@ class SubServiceController extends BaseController
 
                     if ($row->detail_label && $row->detail_price !== null) {
                         $grouped[$subId]['types'][$row->type_slug]['details'][] = [
+                            'id' => $row->detail_id,   
                             'label' => $row->detail_label,
                             'price' => $row->detail_price,
                         ];
