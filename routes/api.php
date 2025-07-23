@@ -105,6 +105,7 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
     // User Address List Route
     Route::get('/user-address-list', [UserAddressController::class, 'userAddressList']);
 
+    Route::get('/admin-booking-report', [RazorpayController::class, 'adminBookingList']);
     // Privacy Policy Routes
     Route::group(['prefix' => '/privacy-policy'], function () {
         Route::get('/index', [PrivacyPolicyController::class, 'index']);
@@ -171,6 +172,8 @@ Route::middleware(['auth:api', 'role:user'])->group(function () {
         Route::post('/update/{id}', [UserAddressController::class, 'update']);
         Route::post('/delete/{id}', [UserAddressController::class, 'delete']);
     });
+
+    Route::get('/user-booking-report', [RazorpayController::class, 'userBookingList']);
 
     // Sub Service Type Detail List Route API
     Route::get('/sub-service-type-detail-list', [SubServiceTypeDetailController::class, 'index']);

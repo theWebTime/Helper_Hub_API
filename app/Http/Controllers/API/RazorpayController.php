@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Razorpay\Api\Api;
 use App\Models\SiteSetting;
 use App\Models\Booking;
+use App\Models\SubserviceTypeDetail;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -25,38 +26,27 @@ class RazorpayController extends BaseController
     public function createOrder(Request $request)
     {
         $messages = [
-            'amount.required' => 'Payment amount is required.',
-            'amount.numeric' => 'Amount must be a valid number.',
             'service_id.required' => 'Service is required.',
-            'service_id.exists' => 'Service does not exist.',
             'subservice_id.required' => 'Subservice is required.',
-            'subservice_id.exists' => 'Subservice does not exist.',
-            'subservice_type_detail_id.required' => 'Subservice type detail is required.',
-            'subservice_type_detail_id.exists' => 'Subservice type detail does not exist.',
+            'subservice_type_detail_ids.required' => 'Subservice details are required.',
+            'subservice_type_detail_ids.array' => 'Subservice details must be an array.',
+            'subservice_type_detail_ids.*.exists' => 'Some subservice detail IDs are invalid.',
             'user_address_id.required' => 'Address is required.',
-            'user_address_id.exists' => 'Invalid address.',
-            'service_price.required' => 'Service price is required.',
-            'platform_fee.numeric' => 'Platform fee must be a number.',
-            'total_amount.required' => 'Total amount is required.',
-            'total_amount.numeric' => 'Total amount must be a number.',
-            'schedule_start.required' => 'Schedule start is required.',
-            'schedule_start.date' => 'Schedule start must be a valid date.',
-            'schedule_end.date' => 'Schedule end must be a valid date.',
+            'schedule_date.required' => 'Schedule date is required.',
+            'schedule_date.date' => 'Schedule date must be valid.',
+            'schedule_time.required' => 'Schedule time is required.',
             'is_dog.boolean' => 'Is dog must be true or false.',
             'special_instructions.string' => 'Special instructions must be a string.',
         ];
 
         $validated = $request->validate([
-            'amount' => 'required|numeric|min:1',
             'service_id' => 'required|exists:services,id',
             'subservice_id' => 'required|exists:subservices,id',
-            'subservice_type_detail_id' => 'required|exists:subservice_type_details,id',
+            'subservice_type_detail_ids' => 'required|array|min:1',
+            'subservice_type_detail_ids.*' => 'exists:subservice_type_details,id',
             'user_address_id' => 'required|exists:user_addresses,id',
-            'service_price' => 'required|numeric|min:0',
-            'platform_fee' => 'nullable|numeric|min:0',
-            'total_amount' => 'required|numeric|min:0',
-            'schedule_start' => 'required|date',
-            'schedule_end' => 'nullable|date',
+            'schedule_date' => 'required|date',
+            'schedule_time' => 'required',
             'is_dog' => 'nullable|boolean',
             'special_instructions' => 'nullable|string|max:1000',
             'notes' => 'nullable|array',
@@ -64,39 +54,58 @@ class RazorpayController extends BaseController
 
         DB::beginTransaction();
         try {
+            // 🔒 Fetch platform fee value from SiteSetting
+            $setting = SiteSetting::query()->select('razorpay_key_id', 'razorpay_key_secret', 'platform_fee_value')->first();
+            if (!$setting || !$setting->razorpay_key_secret || !$setting->razorpay_key_id) {
+                return $this->sendError('Razorpay credentials not configured.');
+            }
+
+            // 🔍 Fetch prices from subservice_type_details
+            $detailPrices = SubserviceTypeDetail::whereIn('id', $validated['subservice_type_detail_ids'])->pluck('price')->toArray();
+
+            if (count($detailPrices) === 0) {
+                return $this->sendError('No valid pricing found for the selected options.');
+            }
+
+            $service_price = array_sum($detailPrices);
+            $platform_fee = (float) $setting->platform_fee_value;
+            $total_amount = $service_price + $platform_fee;
+
             $booking_number = $this->generateBookingNumber();
 
+            // 📝 Create Booking (no longer includes subservice_type_detail_id)
             $booking = Booking::create([
                 'booking_number' => $booking_number,
-                'user_id' => auth()->id(), // Authenticated user
+                'user_id' => auth()->id(),
                 'service_id' => $validated['service_id'],
                 'subservice_id' => $validated['subservice_id'],
-                'subservice_type_detail_id' => $validated['subservice_type_detail_id'],
                 'user_address_id' => $validated['user_address_id'],
-                'service_price' => $validated['service_price'],
-                'platform_fee' => $validated['platform_fee'] ?? 0,
-                'total_amount' => $validated['total_amount'],
-                'schedule_start' => $validated['schedule_start'],
-                'schedule_end' => $validated['schedule_end'] ?? null,
+                'service_price' => $service_price,
+                'platform_fee' => $platform_fee,
+                'total_amount' => $total_amount,
+                'schedule_date' => $validated['schedule_date'],
+                'schedule_time' => $validated['schedule_time'],
+                'schedule_end_date' => $validated['service_id'] == 2
+                    ? \Carbon\Carbon::parse($validated['schedule_date'])->addMonth()->toDateString()
+                    : null,
                 'is_dog' => $validated['is_dog'] ?? false,
                 'special_instructions' => $validated['special_instructions'] ?? null,
                 'payment_status' => 1,
                 'booking_status' => 1,
             ]);
 
-            $setting = $this->getRazorpayConfig();
-            if (!$setting || !$setting->razorpay_key_id || !$setting->razorpay_key_secret) {
-                DB::rollBack();
-                return $this->sendError('Razorpay credentials not configured.');
-            }
+            // 🔗 Attach multiple subservice_type_details to pivot
+            $booking->subserviceTypeDetails($validated['subservice_type_detail_ids']);
+
+            // 💳 Create Razorpay order
             $api = new Api($setting->razorpay_key_id, $setting->razorpay_key_secret);
 
             $orderData = [
-                'receipt'         => $booking->booking_number,
-                'amount'          => $validated['amount'] * 100,
-                'currency'        => 'INR',
+                'receipt' => $booking->booking_number,
+                'amount' => $total_amount * 100, // in paise
+                'currency' => 'INR',
                 'payment_capture' => 1,
-                'notes'           => $validated['notes'] ?? [],
+                'notes' => $validated['notes'] ?? [],
             ];
             $order = $api->order->create($orderData);
 
@@ -122,6 +131,7 @@ class RazorpayController extends BaseController
             return $this->sendError('Failed to create booking/order.', ['error' => $e->getMessage()]);
         }
     }
+
 
     /**
      * Verify payment and update booking
@@ -196,5 +206,128 @@ class RazorpayController extends BaseController
             $lastNumber = (int) $matches[1];
         }
         return $prefix . str_pad($lastNumber + 1, 5, '0', STR_PAD_LEFT);
+    }
+
+    public function adminBookingList(Request $request)
+    {
+        try {
+            $bookings = \DB::table('bookings')
+                ->join('users', 'users.id', '=', 'bookings.user_id')
+                ->join('services', 'services.id', '=', 'bookings.service_id')
+                ->join('subservices', 'subservices.id', '=', 'bookings.subservice_id')
+                ->join('user_addresses', 'user_addresses.id', '=', 'bookings.user_address_id')
+                ->select(
+                    'bookings.id',
+                    'bookings.booking_number',
+                    'bookings.user_id',
+                    'bookings.service_id',
+                    'bookings.subservice_id',
+                    'bookings.user_address_id',
+                    'bookings.service_price',
+                    'bookings.platform_fee',
+                    'bookings.total_amount',
+                    'bookings.schedule_date',
+                    'bookings.schedule_time',
+                    'bookings.schedule_end_date',
+                    'bookings.is_dog',
+                    'bookings.special_instructions',
+                    'bookings.payment_status',
+                    'bookings.payment_id',
+                    'bookings.payment_method',
+                    'bookings.payment_order_id',
+                    'bookings.payment_date',
+                    'bookings.booking_status',
+                    'bookings.cancellation_reason',
+                    'bookings.cancelled_at'
+                )
+                ->when($request->search, function ($q) use ($request) {
+                    $q->where('bookings.booking_number', 'like', '%' . $request->search . '%')
+                        ->orWhere('users.name', 'like', '%' . $request->search . '%');
+                })
+                ->orderByDesc('bookings.id')
+                ->paginate($request->itemsPerPage ?? 10);
+
+            // Add subservice type details (label + price) per booking
+            $bookings->getCollection()->transform(function ($booking) {
+                $details = \DB::table('booking_subservice_type_detail as bstd')
+                    ->join('subservice_type_details as std', 'std.id', '=', 'bstd.subservice_type_detail_id')
+                    ->where('bstd.booking_id', $booking->id)
+                    ->select('std.label', 'std.price')
+                    ->get()
+                    ->map(function ($d) {
+                        return "{$d->label} (₹{$d->price})";
+                    })
+                    ->implode(', '); // combine into single string
+
+                $booking->selected_type_details = $details;
+                return $booking;
+            });
+
+            return $this->sendResponse($bookings, 'Booking report fetched successfully.');
+        } catch (\Exception $e) {
+            return $this->sendError('Something went wrong!', $e->getMessage());
+        }
+    }
+
+    public function userBookingList(Request $request)
+    {
+        try {
+            $bookings = \DB::table('bookings')
+                // ->join('users', 'users.id', '=', 'bookings.user_id')
+                ->join('services', 'services.id', '=', 'bookings.service_id')
+                ->join('subservices', 'subservices.id', '=', 'bookings.subservice_id')
+                ->join('user_addresses', 'user_addresses.id', '=', 'bookings.user_address_id')
+                ->select(
+                    'bookings.id',
+                    'bookings.booking_number',
+                    'bookings.user_id',
+                    'bookings.service_id',
+                    'bookings.subservice_id',
+                    'bookings.user_address_id',
+                    'bookings.service_price',
+                    'bookings.platform_fee',
+                    'bookings.total_amount',
+                    'bookings.schedule_date',
+                    'bookings.schedule_time',
+                    'bookings.schedule_end_date',
+                    'bookings.is_dog',
+                    'bookings.special_instructions',
+                    'bookings.payment_status',
+                    'bookings.payment_id',
+                    'bookings.payment_method',
+                    'bookings.payment_order_id',
+                    'bookings.payment_date',
+                    'bookings.booking_status',
+                    'bookings.cancellation_reason',
+                    'bookings.cancelled_at'
+                )
+                ->when($request->search, function ($q) use ($request) {
+                    $q->where('bookings.booking_number', 'like', '%' . $request->search . '%')
+                       ;
+                })
+                ->where('bookings.user_id', auth()->user()->id)
+                ->orderByDesc('bookings.id')
+                ->paginate($request->itemsPerPage ?? 10);
+
+            // Add subservice type details (label + price) per booking
+            $bookings->getCollection()->transform(function ($booking) {
+                $details = \DB::table('booking_subservice_type_detail as bstd')
+                    ->join('subservice_type_details as std', 'std.id', '=', 'bstd.subservice_type_detail_id')
+                    ->where('bstd.booking_id', $booking->id)
+                    ->select('std.label', 'std.price')
+                    ->get()
+                    ->map(function ($d) {
+                        return "{$d->label} (₹{$d->price})";
+                    })
+                    ->implode(', '); // combine into single string
+
+                $booking->selected_type_details = $details;
+                return $booking;
+            });
+
+            return $this->sendResponse($bookings, 'Booking report fetched successfully.');
+        } catch (\Exception $e) {
+            return $this->sendError('Something went wrong!', $e->getMessage());
+        }
     }
 }
