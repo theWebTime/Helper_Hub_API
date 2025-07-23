@@ -27,7 +27,7 @@ class UserAddressController extends BaseController
     {
         try {
             $data = UserAddress::where('user_id', auth()->id())->join('pin_codes', 'pin_codes.id', '=', 'user_addresses.pin_code_id')
-                ->select('user_addresses.id', 'pin_codes.pin_code', 'type', 'title', 'name', 'phone', 'address', 'landmark')
+                ->select('user_addresses.id', 'pin_codes.pin_code', 'type', 'title', 'name', 'phone', 'address', 'landmark', 'is_default')
                 ->when($request->search, function ($query) use ($request) {
                     $query->where('address', 'like', "%{$request->search}%");
                 })

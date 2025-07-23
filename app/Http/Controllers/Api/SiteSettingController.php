@@ -16,7 +16,7 @@ class SiteSettingController extends BaseController
         try {
             $input = $request->all();
             $validator = Validator::make($input, [
-                'logo' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
+                'logo' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:5120',
                 'razorpay_key_id' => 'nullable',
                 'razorpay_key_secret' => 'nullable',
                 'platform_fee_value' => 'nullable',
