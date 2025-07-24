@@ -30,7 +30,7 @@ class PincodeController extends BaseController
         try {
             $input = $request->all();
             $validator = Validator::make($input, [
-                'pin_code' => 'required',
+                'pin_code' => 'required|unique:pin_codes,pin_code',
             ]);
             if ($validator->fails()) {
                 return $this->sendError('Validation Error.', $validator->errors());
@@ -60,7 +60,7 @@ class PincodeController extends BaseController
         try {
             $input = $request->all();
             $validator = Validator::make($input, [
-                'pin_code' => 'required',
+                'pin_code' => 'required|unique:pin_codes,pin_code,' . $id,
                 'status' => 'required|in:0,1',
             ]);
             if ($validator->fails()) {

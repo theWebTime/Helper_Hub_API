@@ -49,7 +49,7 @@ class UserAddressController extends BaseController
                 'address' => 'required|string',
                 'title' => 'required|string',
                 'name' => 'required|string',
-                'phone' => 'required|string',
+                'phone' => 'required',
                 'landmark' => 'required|string',
                 'is_default' => 'required|boolean',
             ]);
@@ -106,7 +106,7 @@ class UserAddressController extends BaseController
                 'address' => 'required|string',
                 'title' => 'required|string',
                 'name' => 'required|string',
-                'phone' => 'required|string',
+                'phone' => 'required',
                 'landmark' => 'required|string',
                 'is_default' => 'required|boolean',
             ]);
