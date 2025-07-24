@@ -38,14 +38,16 @@ return new class extends Migration
             $table->text('special_instructions')->nullable();
 
             /* ───── Payment ───── */
-            $table->unsignedTinyInteger('payment_status')->default(1);
+            $table->unsignedTinyInteger('payment_status')->default(1)
+                ->comment('1=Pending, 2=Paid, 3=Failed, 4=Refunded');
             $table->string('payment_id')->nullable();
             $table->string('payment_method')->nullable();
             $table->string('payment_order_id')->nullable();
             $table->dateTime('payment_date')->nullable();
 
             /* ───── Booking Status ───── */
-            $table->unsignedTinyInteger('booking_status')->default(1);
+            $table->unsignedTinyInteger('booking_status')->default(1)
+                ->comment('1=Pending, 2=Confirmed, 3=In Progress, 4=Completed, 5=Cancelled');
             $table->text('cancellation_reason')->nullable();
             $table->dateTime('cancelled_at')->nullable();
 
