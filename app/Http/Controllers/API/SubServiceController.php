@@ -39,7 +39,7 @@ class SubServiceController extends BaseController
         try {
             $data = Subservice::join('services', 'services.id', '=', 'subservices.service_id')->select('subservices.id', 'services.name as service_name', 'subservices.name as sub_service_name')->where(function ($query) use ($request) {
                 if ($request->search != null) {
-                    $query->where('name', 'like', '%' . $request->search . '%');
+                    $query->where('subservices.name', 'like', '%' . $request->search . '%');
                 }
             })->orderBy('id', 'DESC')->paginate($request->itemsPerPage ?? 10);
 
@@ -127,7 +127,7 @@ class SubServiceController extends BaseController
             // Update user
             $user->update($updateData);
 
-            return $this->sendResponse([], 'Service updated successfully.');
+            return $this->sendResponse([], 'Sub Service updated successfully.');
         } catch (Exception $e) {
             return $this->sendError('Something went wrong!', $e->getMessage());
         }

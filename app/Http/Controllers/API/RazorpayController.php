@@ -196,16 +196,47 @@ class RazorpayController extends BaseController
     private function generateBookingNumber(): string
     {
         $prefix = "#HH" . date("Y");
+
         $lastBooking = Booking::withTrashed()
             ->select('booking_number')
             ->where('booking_number', 'like', "{$prefix}%")
             ->orderByDesc('id')
             ->first();
+
         $lastNumber = 0;
-        if ($lastBooking && preg_match('/(\d+)$/', $lastBooking->booking_number, $matches)) {
+
+        if ($lastBooking && preg_match('/(\d{6})$/', $lastBooking->booking_number, $matches)) {
             $lastNumber = (int) $matches[1];
         }
-        return $prefix . str_pad($lastNumber + 1, 5, '0', STR_PAD_LEFT);
+
+        $nextNumber = $lastNumber + 1;
+
+        if ($nextNumber > 999999) {
+            throw new \Exception("Maximum booking number limit reached for the year.");
+        }
+
+        return $prefix . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+    }
+
+    public function bookingStatus()
+    {
+        $today = Carbon::today()->toDateString();
+
+        $stats = DB::table('bookings')
+            ->selectRaw("
+                COUNT(*) as total_bookings,
+                COUNT(CASE WHEN payment_status = 1 THEN 1 END) as pending_payments,
+                COUNT(CASE WHEN DATE(schedule_date) = '{$today}' AND booking_status IN (1, 2) THEN 1 END) as todays_bookings,
+                COUNT(CASE WHEN booking_status = 5 THEN 1 END) as cancelled_bookings
+            ")
+            ->first();
+
+        return response()->json([
+            'total_bookings'     => $stats->total_bookings,
+            'pending_payments'   => $stats->pending_payments,
+            'todays_bookings'    => $stats->todays_bookings,
+            'cancelled_bookings' => $stats->cancelled_bookings,
+        ]);
     }
 
     public function adminBookingList(Request $request)
@@ -238,16 +269,26 @@ class RazorpayController extends BaseController
                     'bookings.payment_date',
                     'bookings.booking_status',
                     'bookings.cancellation_reason',
-                    'bookings.cancelled_at'
+                    'bookings.cancelled_at',
+                    'users.name as user_name',
+                    'services.name as service_name',
+                    'subservices.name as sub_service_name',
+                    'user_addresses.address as user_address',
+                    'user_addresses.landmark as user_landmark',
                 )
                 ->when($request->search, function ($q) use ($request) {
                     $q->where('bookings.booking_number', 'like', '%' . $request->search . '%')
                         ->orWhere('users.name', 'like', '%' . $request->search . '%');
+                })->when($request->payment_status !== null && $request->payment_status !== '', function ($q) use ($request) {
+                    $q->where('bookings.payment_status', $request->payment_status);
                 })
-                ->orderByDesc('bookings.id')
-                ->paginate($request->itemsPerPage ?? 10);
+                ->when($request->booking_status !== null && $request->booking_status !== '', function ($q) use ($request) {
+                    $q->where('bookings.booking_status', $request->booking_status);
+                })
+                                ->orderByDesc('bookings.id')
+                ->paginate($request->itemsPerPage ?? 10)
+                ->appends($request->all());
 
-            // Add subservice type details (label + price) per booking
             $bookings->getCollection()->transform(function ($booking) {
                 $details = \DB::table('booking_subservice_type_detail as bstd')
                     ->join('subservice_type_details as std', 'std.id', '=', 'bstd.subservice_type_detail_id')
@@ -257,7 +298,7 @@ class RazorpayController extends BaseController
                     ->map(function ($d) {
                         return "{$d->label} (₹{$d->price})";
                     })
-                    ->implode(', '); // combine into single string
+                    ->implode(', ');
 
                 $booking->selected_type_details = $details;
                 return $booking;
@@ -266,6 +307,23 @@ class RazorpayController extends BaseController
             return $this->sendResponse($bookings, 'Booking report fetched successfully.');
         } catch (\Exception $e) {
             return $this->sendError('Something went wrong!', $e->getMessage());
+        }
+    }
+
+    public function updateBookingStatus(Request $request, $id)
+    {
+        $request->validate([
+            'booking_status' => 'required', // based on your status codes
+        ]);
+
+        try {
+            $booking = Booking::findOrFail($id);
+            $booking->booking_status = $request->booking_status;
+            $booking->save();
+
+            return response()->json(['success' => true, 'message' => 'Booking status updated successfully.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 

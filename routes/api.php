@@ -105,7 +105,12 @@ Route::middleware(['auth:api', 'role:admin'])->group(function () {
     // User Address List Route
     Route::get('/user-address-list', [UserAddressController::class, 'userAddressList']);
 
+    Route::get('/booking-status-report', [RazorpayController::class, 'bookingStatus']);
+
     Route::get('/admin-booking-report', [RazorpayController::class, 'adminBookingList']);
+
+    Route::post('/admin-update-booking-status/{id}', [RazorpayController::class, 'updateBookingStatus']);
+    
     // Privacy Policy Routes
     Route::group(['prefix' => '/privacy-policy'], function () {
         Route::get('/index', [PrivacyPolicyController::class, 'index']);
