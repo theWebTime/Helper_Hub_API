@@ -17,6 +17,66 @@ use Illuminate\Validation\Rule;
 class AuthenticationController extends BaseController
 {
 
+    private function sendWhatsappOtp($mobile, $otp)
+    {
+        $payload = [
+            "integrated_number" => env('SMS_INTEGRATED_NUMBER'), // ✅ your Msg91 integrated number
+            "content_type" => "template",
+            "payload" => [
+                "messaging_product" => "whatsapp",
+                "type" => "template",
+                "template" => [
+                    "name" => env('SMS_TEMPLATE_NAME'), // ✅ your template name
+                    "language" => [
+                        "code" => "en", // lower case
+                        "policy" => "deterministic"
+                    ],
+                    "namespace" => null,
+                    "to_and_components" => [
+                        [
+                            "to" => ["91{$mobile}"],
+                            "components" => [
+                                "body_1" => [
+                                    "type" => "text",
+                                    "value" => $otp
+                                ],
+                                "button_1" => [
+                                    "subtype" => "url",
+                                    "type" => "text",
+                                    "value" => $otp
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ];
+
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => "https://control.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/",
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST => "POST",
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_HTTPHEADER => [
+                "accept: application/json",
+                "authkey: " . env('SMS_AUTH_KEY'), // ✅ your Msg91 auth key
+                "content-type: application/json"
+            ],
+        ]);
+
+        $response = curl_exec($curl);
+        $err = curl_error($curl);
+        curl_close($curl);
+
+        if ($err) {
+            \Log::error('WhatsApp OTP Send Error: ' . $err);
+            return false;
+        }
+
+        return true;
+    }
+
     public function sendOtpForRegistration(Request $request): JsonResponse
     {
         try {
@@ -39,8 +99,11 @@ class AuthenticationController extends BaseController
                 return $this->sendError($validator->errors()->first());
             }
 
-            // Static OTP for now
-            $otp = '1234';
+            if(env('APP_ENV') == 'production'){
+                $otp = rand(1000, 9999);
+            }else{
+                $otp = '1234';
+            }
 
             // OTP valid for 2 minute
             $expiresAt = now()->addMinute(2);
@@ -56,10 +119,13 @@ class AuthenticationController extends BaseController
                     'expires_at' => $expiresAt,
                 ]
             );
+            if(env('APP_ENV') == 'production'){
+                $this->sendWhatsappOtp($request->mobile, $otp);
+            }
 
             return $this->sendResponse(
                 [],
-                'OTP sent successfully(1234 code as static). It will expire in 2 minute.',
+                'OTP sent successfully. It will expire in 2 minute.',
             );
         } catch (\Exception $e) {
             return $this->sendError('OTP send failed.', ['error' => $e->getMessage()]);
@@ -156,8 +222,11 @@ class AuthenticationController extends BaseController
                 return $this->sendError('User not found or inactive.');
             }
 
-            // Static OTP for now
-            $otp = '1234';
+            if(env('APP_ENV') == 'production'){
+                $otp = rand(1000, 9999);
+            }else{
+                $otp = '1234';
+            }
             $expiresAt = now()->addMinute(2);
 
             OtpVerification::updateOrCreate(
@@ -171,10 +240,13 @@ class AuthenticationController extends BaseController
                     'expires_at' => $expiresAt,
                 ]
             );
-
+            if(env('APP_ENV') == 'production'){
+                $this->sendWhatsappOtp($request->mobile, $otp);
+            }
+        
             return $this->sendResponse(
                 [],
-                'OTP sent successfully (1234 code as static). It will expire in 2 minutes.'
+                'OTP sent successfully. It will expire in 2 minutes.'
             );
         } catch (\Exception $e) {
             return $this->sendError('OTP send failed.', ['error' => $e->getMessage()]);
