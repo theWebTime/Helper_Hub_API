@@ -219,25 +219,26 @@ class RazorpayController extends BaseController
     }
 
     public function bookingStatus()
-    {
-        $today = Carbon::today()->toDateString();
+{
+    $today = Carbon::today()->toDateString();
 
-        $stats = DB::table('bookings')
-            ->selectRaw("
-                COUNT(*) as total_bookings,
-                COUNT(CASE WHEN payment_status = 1 THEN 1 END) as pending_payments,
-                COUNT(CASE WHEN DATE(schedule_date) = '{$today}' AND booking_status IN (1, 2) THEN 1 END) as todays_bookings,
-                COUNT(CASE WHEN booking_status = 5 THEN 1 END) as cancelled_bookings
-            ")
-            ->first();
+    $stats = DB::table('bookings')
+        ->selectRaw("
+            COUNT(CASE WHEN booking_status = 2 THEN 1 END) as booking_accepted,
+            COUNT(CASE WHEN booking_status = 4 THEN 1 END) as completed_bookings,
+            COUNT(CASE WHEN DATE(schedule_date) = ? AND booking_status IN (1, 2) THEN 1 END) as todays_bookings,
+            COUNT(CASE WHEN payment_status = 1 THEN 1 END) as pending_payments
+        ", [$today])
+        ->first();
 
-        return response()->json([
-            'total_bookings'     => $stats->total_bookings,
-            'pending_payments'   => $stats->pending_payments,
-            'todays_bookings'    => $stats->todays_bookings,
-            'cancelled_bookings' => $stats->cancelled_bookings,
-        ]);
-    }
+    return response()->json([
+        'booking_accepted'   => $stats->booking_accepted,
+        'completed_bookings' => $stats->completed_bookings,
+        'todays_bookings'    => $stats->todays_bookings,
+        'pending_payments'   => $stats->pending_payments,
+    ]);
+}
+
 
     public function adminBookingList(Request $request)
     {
