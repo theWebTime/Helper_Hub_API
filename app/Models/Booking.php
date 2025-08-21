@@ -22,6 +22,7 @@ class Booking extends Model
         'schedule_time',
         'schedule_end_date',
         'is_dog',
+        'gender',
         'special_instructions',
         'payment_status',
         'payment_id',

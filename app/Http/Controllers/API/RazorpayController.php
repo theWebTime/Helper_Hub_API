@@ -36,6 +36,7 @@ class RazorpayController extends BaseController
             'schedule_date.date' => 'Schedule date must be valid.',
             'schedule_time.required' => 'Schedule time is required.',
             'is_dog.boolean' => 'Is dog must be true or false.',
+            'gender.boolean' => 'Gender must be true or false.',
             'special_instructions.string' => 'Special instructions must be a string.',
         ];
 
@@ -48,6 +49,7 @@ class RazorpayController extends BaseController
             'schedule_date' => 'required|date',
             'schedule_time' => 'required',
             'is_dog' => 'nullable|boolean',
+            'gender' => 'nullable|boolean',
             'special_instructions' => 'nullable|string|max:1000',
             'notes' => 'nullable|array',
         ], $messages);
@@ -89,6 +91,7 @@ class RazorpayController extends BaseController
                     ? \Carbon\Carbon::parse($validated['schedule_date'])->addMonth()->toDateString()
                     : null,
                 'is_dog' => $validated['is_dog'] ?? false,
+                'gender' => $validated['gender'] ?? false,
                 'special_instructions' => $validated['special_instructions'] ?? null,
                 'payment_status' => 1,
                 'booking_status' => 1,
@@ -262,6 +265,7 @@ class RazorpayController extends BaseController
                     'bookings.schedule_time',
                     'bookings.schedule_end_date',
                     'bookings.is_dog',
+                    'bookings.gender',
                     'bookings.special_instructions',
                     'bookings.payment_status',
                     'bookings.payment_id',
@@ -353,6 +357,7 @@ class RazorpayController extends BaseController
                     'bookings.schedule_time',
                     'bookings.schedule_end_date',
                     'bookings.is_dog',
+                    'bookings.gender',
                     'bookings.special_instructions',
                     'bookings.payment_status',
                     'bookings.payment_id',
