@@ -17,7 +17,7 @@ class SubServiceController extends BaseController
     public function serviceList(Request $request)
     {
         try {
-            $data = Service::select('id', 'name')->get();
+            $data = Service::where('status', true)->select('id', 'name')->get();
             return $this->sendResponse($data, 'Service retrieved successfully.');
         } catch (Exception $e) {
             return $this->sendError('something went wrong!', $e);
@@ -27,10 +27,16 @@ class SubServiceController extends BaseController
     public function randomSubServiceList(Request $request)
     {
         try {
-            $data = Subservice::select('id', 'name', 'image')->inRandomOrder()->limit(4)->get();
-            return $this->sendResponse($data, 'Sub Service retrieved successfully.');
+        // Example: selected IDs
+        $selectedIds = [7, 16, 17, 18]; 
+
+        $data = Subservice::select('id', 'name', 'image')
+            ->whereIn('id', $selectedIds)
+            ->get();
+
+        return $this->sendResponse($data, 'Selected Sub Services retrieved successfully.');
         } catch (Exception $e) {
-            return $this->sendError('something went wrong!', $e);
+            return $this->sendError('Something went wrong!', $e->getMessage());
         }
     }
 
